@@ -517,8 +517,8 @@ for j in range (len(sa_list)):
 print("total_time_inday_list_NBIOT", total_time_inyear_list_NBIoT)
 
 #LORA
-for j in range(len(ta_list)):
-    for i in range(len(sa_list)):
+for j in range(len(sa_list)):
+    for i in range(len(ta_list)):
         MaxDataPacketSize = 250  # Maximum size of a data packet in bytes
         PTx = 419.604e-3  # Power consumption
         PRx = 44.064e-3  # Power consumption
