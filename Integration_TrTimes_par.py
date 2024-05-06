@@ -390,6 +390,8 @@ total_time_inyear_list_NBIoT = []
 total_time_inyear_list_LTECAT4 = []
 total_time_inyear_list_BLE_with_solar_panel = []
 sa_list = [1000, 10000, 22500, 90000, 140625, 562500] # Compressed image sizes in bytes
+PER = 0  # 0.01  # Packet error rate
+Ebattery = 13000  # Initial energy level of the battery in joules
 irradiance = 400  # Irradiance in W/m^2 (STC)
 panel_area = 0.0033  # Panel area in m^2
 sunlight_hours = 3  # Sunlight hours
@@ -408,11 +410,6 @@ for j in range (len(sa_list)):
         tsRx, tsTx = BLE_calculate_rx_tx_time(sa_list[j], 1)
 
         tsIdle = 0  # Idle time in seconds counted in Rx and Tx
-        # ton = tsTx + tsRx + tsIdle
-        # tsSleep = ta - ton  # Sleep time in seconds
-        # print("tsSleep", tsSleep)
-        PER = 0  # 0.01  # Packet error rate
-        Ebattery = 13000  # Initial energy level of the battery in joules
         total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
                                   tsIdle, Ebattery)
         total_time_inyear_BLE = total_time / (3600 * 24)
@@ -436,10 +433,6 @@ for j in range (len(sa_list)):
         PIdle = 2.4e-3  # 5e-3  (BLE)# Power consumption
         PSleep = 0.015e-3  # 3e-6(BLE)  # Power consumption
         tsRx, tsTx, tsIdle = NBIOT_calculate_rx_tx_wait_time(sa_list[j])
-        PER = 0  # 0.01  # Packet error rate
-        PSleepR = 0  # 0.001408e-3#4.3e-6#3e-6  # Power consumption during sleep mode for reception in watts
-        Ebattery = 13000  # Initial energy level of the battery in joules
-
         total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
                                   tsIdle, Ebattery)
         total_time_inyear_NBIOT = total_time / (3600 * 24)
@@ -462,9 +455,6 @@ for j in range(len(sa_list)):
         PIdle = 3e-6  # Power consumption
         PSleep = 0.04e-6  # Power consumption
         tsRx, tsTx, tsIdle = LoRa_calculate_rx_tx_wait_time_lora(sa_list[j])
-        PER = 0  # 0.01  # Packet error rate
-        Esyn = 0  # Energy consumed for synchronization in joules
-        Ebattery = 13000  # Initial energy level of the battery in joules
         total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
                                   tsIdle, Ebattery)
         total_time_inyear_lora = total_time / (3600 * 24)
@@ -491,9 +481,6 @@ for j in range (len(sa_list)):
         PIdle = 0.01026  # asidle Power consumption
         PSleep = 100e-6  # 3e-6(BLE)  # Power consumption
         tsRx, tsTx, tsIdle = NBIOT_calculate_rx_tx_wait_time(sa_list[j])
-        PER = 0  # 0.01  # Packet error rate
-        Ebattery = 13000  # Initial energy level of the battery in joules
-
         total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
                                   tsIdle, Ebattery)
         total_time_inyear_LTECAT4 = total_time / (3600 * 24)
