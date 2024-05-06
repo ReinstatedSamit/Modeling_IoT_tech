@@ -1,3 +1,27 @@
+'''    Args:
+    ta (float): Total time in seconds.
+    tsyn (float): Time for synchronization in seconds.
+    sa (int): Size of data in bytes.
+    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
+    PTx (float): Power consumption during transmission in watts.
+    PRx (float): Power consumption during reception in watts.
+    PIdle (float): Power consumption during idle state in watts.
+    PSleep (float): Power consumption during sleep mode in watts.
+    PER (float): Packet error rate.
+    tsTx (float): Transmission time in seconds.
+    tsRx (float): Reception time in seconds.
+    tsIdle (float): Idle time in seconds.
+    tsSleep (float): Sleep time in seconds.
+    ton (float): On-time duration in seconds.
+    PsleepR (float): Power consumption during sleep mode for reception in watts.
+    synchronization_on_data_frame_possible (bool): Whether synchronization on data frame is possible.
+    Esyn (float): Energy consumed for synchronization in joules.
+    Ebattery (float): Initial energy level of the battery in joules.
+    irradiance (float): Solar irradiance in W/m^2.
+    panel_area (float): Area of the solar panel in m^2.
+    sunlight_hours (float): Number of sunlight hours per day.
+    efficiency (float): Efficiency of the solar panel.'''
+
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -175,9 +199,10 @@ def LoRa_calculate_rx_tx_wait_time_lora(data_size):
 
 def LC4_calculate_tx_delay(data_size):
     # Upper layer constants
+    # udp_max_size = 65535;   % theoretical maximum including the udp header; not used here because one UDP per IP is more realistic for implemenations
     udp_header_size = 8
     ip_max_size = 1500  # MTU is larger than in case of 6Lo
-    ip_header_size = 40
+    ip_header_size = 40  #Default IP Header
 
     ip_over = ip_header_size + udp_header_size
     ip_pl_size = ip_max_size - ip_over
@@ -187,13 +212,13 @@ def LC4_calculate_tx_delay(data_size):
     phy_tb_size = 51024  # bit
 
     # Values from 2009_larmo -> Table 1, p. 58
-    pdcp_pl_size = 1460  # byte
+    pdcp_pl_size = 1460  # byte (1500-40)
     pdcp_ip_he_comp = 8  # byte
     pdcp_he_size = 28  # bit
     rlc_he_size = 44  # bit
     mac_he_size = 8  # bit
 
-    #Assumed-not given
+    #Assumed from NBIOT-not given
     phy_k0_time = 0.008
     phy_min_ack_delay = 0.003
     phy_n_wait = 0
@@ -210,6 +235,7 @@ def LC4_calculate_tx_delay(data_size):
     ip_amount = ip_pack_num * (ip_max_size - ip_header_size) + udp_header_size + ip_last_size
 
     # Data amount on PDCP layer
+    # one packet on pdcp = one ip packet = one udp packet 
     if ip_last_size > 0:
         data_at_pdcp = ((ip_amount + ((ip_pack_num + 1) * pdcp_ip_he_comp)) * 8) + (ip_pack_num + 1) * pdcp_he_size
     else:
@@ -236,22 +262,11 @@ def LC4_calculate_tx_delay(data_size):
 
     return 0, tx_time, 0
 
+
+
 def ComputeEnergyToSendData_v2(sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx, tsIdle, ta):
     """
     Compute the energy consumed to send data.
-
-    Args:
-    sa (int): Size of application data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
 
     Returns:
     float: Energy consumed in sending data in joules.
@@ -295,26 +310,6 @@ def Lifetime_cal(ta, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, 
     """
     Compute the lifetime of the system.
 
-    Args:
-    ta (float): Total time in seconds.
-    tsyn (float): Time for synchronization in seconds.
-    sa (int): Size of data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
-    ton (float): On-time duration in seconds.
-    PsleepR (float): Power consumption during sleep mode for reception in watts.
-    synchronization_on_data_frame_possible (bool): Whether synchronization on data frame is possible.
-    Esyn (float): Energy consumed for synchronization in joules.
-    Ebattery (float): Initial energy level of the battery in joules.
-
     Returns:
     float: Lifetime of the system in seconds.
     """
@@ -336,30 +331,6 @@ def Lifetime_cal_with_solarpanel(ta, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSl
                                  tsIdle, Ebattery, irradiance, panel_area, sunlight_hours, efficiency):
     """
     Compute the lifetime of the system.
-
-    Args:
-    ta (float): Total time in seconds.
-    tsyn (float): Time for synchronization in seconds.
-    sa (int): Size of data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
-    ton (float): On-time duration in seconds.
-    PsleepR (float): Power consumption during sleep mode for reception in watts.
-    synchronization_on_data_frame_possible (bool): Whether synchronization on data frame is possible.
-    Esyn (float): Energy consumed for synchronization in joules.
-    Ebattery (float): Initial energy level of the battery in joules.
-    irradiance (float): Solar irradiance in W/m^2.
-    panel_area (float): Area of the solar panel in m^2.
-    sunlight_hours (float): Number of sunlight hours per day.
-    efficiency (float): Efficiency of the solar panel.
 
     Returns:
     float: Lifetime of the system in seconds.
@@ -410,49 +381,15 @@ def Lifetime_cal_with_solarpanel(ta, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSl
 
     return Lifetime
 
+#Pararmeter Initialization
 
-
-
-# Example usage:
-'''data_size = 1000000
-use_6lo_hc = 1
-rx_time, tx_time = BLE_calculate_rx_tx_time(data_size, use_6lo_hc)
-print("BLE_RX Time:", rx_time)
-print("BLE_TX Time:", tx_time)
-
-
-data_size = 1000000
-rx_time, tx_time, wait_time = NBIOT_calculate_rx_tx_wait_time(data_size)
-print("NBIOT_RX Time:", rx_time)
-print("NBIOT_TX Time:", tx_time)
-print("NBIOT_Wait Time:", wait_time)
-print("NBIOT_Total Delay:", rx_time+tx_time+wait_time)
-
-data_size = 1000000
-rx_time, tx_time, wait_time = LoRa_calculate_rx_tx_wait_time_lora(data_size)
-print("LORA_RX Time:", rx_time)
-print("LORA_TX Time:", tx_time)
-print("LORA_Wait Time:", wait_time)
-print("LORA_Total Delay:", rx_time+tx_time+wait_time)
-
-
-data_size = 562500
-rx_time, tx_time, wait_time = LC4_calculate_tx_delay(data_size)
-print("L4_RX Time:", rx_time)
-print("L4_TX Time:", tx_time)
-print("L4_Wait Time:", wait_time)
-print("L4_Total Delay:", rx_time+tx_time+wait_time)'''
-
-ta= 10000
-# sa_list = [0.001,0.01,0.1,1,10,100, 1000, 10000, 100000, 1000000] # Total time in seconds
-ta_list = [100, 1000, 10000,100000/2, 100000, 1000000]
-ta_list_one = [3600 * 24]
+ta_list = [60, 900, 1800, 3600, 7200, 10800, 14400, 21600, 43200, 86400] # in seconds
 total_time_inyear_list_loRA = []
 total_time_inyear_list_BLE = []
 total_time_inyear_list_NBIoT = []
 total_time_inyear_list_LTECAT4 = []
 total_time_inyear_list_BLE_with_solar_panel = []
-sa_list = [1000, 10000, 22500, 90000, 140625, 562500]
+sa_list = [1000, 10000, 22500, 90000, 140625, 562500] # Compressed image sizes in bytes
 irradiance = 400  # Irradiance in W/m^2 (STC)
 panel_area = 0.0033  # Panel area in m^2
 sunlight_hours = 3  # Sunlight hours
@@ -570,12 +507,7 @@ for j in range (len(sa_list)):
 
 print("total_time_inday_list_LTECAT4", total_time_inyear_list_LTECAT4)
 
-'''plt.plot(np.array(sa_list) / 1000, total_time_inyear_list_BLE, label="BLE", marker='o', linestyle='-')
-plt.plot(np.array(sa_list) / 1000, total_time_inyear_list_loRA, label="LORA", marker='o', linestyle='-')
-plt.plot(np.array(sa_list) / 1000, total_time_inyear_list_NBIoT, label="NBIOT", marker='o', linestyle='-')
-plt.plot(np.array(sa_list) / 1000, total_time_inyear_list_LTECAT4, label="LTECAT4", marker='o', linestyle='-')
-#plt.plot(np.array(sa_list) / 1000, total_time_inyear_list_BLE_with_solar_panel, label="BLE_solarpanel", marker='o',
-        # linestyle='-')'''
+
 plt.xlabel('Different application time in Hour')
 plt.ylabel('Lifetime in DAYS')
 plt.legend(loc='upper right',bbox_to_anchor=(1.135, 1),fontsize=5)
