@@ -350,22 +350,15 @@ def Lifetime_cal_with_solarpanel(ta, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSl
     #harvested_energy=calculate_solar_harvested_energy_daily(harvested_energy_perday, Lifetime_n_1)
     E_remaining= E
     temp_lifetime_list=[]
-    precounter=0
-    counter = 0
-    while E > 0.1 * E_remaining:  # While energy is above 10% of initial energy
-        E = E_remaining - consumed_energy - Eleak
+    while E > 0.1 * Ebattery:  # While energy is above 10% of initial energy
+        E = E - consumed_energy - Eleak
 
         temp_lifetime_list.append(Lifetime)
-        precounter += 1
-        #print("precounter",precounter)
         # Check if a day has passed
         if (temp_lifetime_list[-1]-temp_lifetime_list[0]) >= 86400:
-            E_remaining = E + harvested_energy_perday
+            #E = E + (E - Ebattery)
+            E=E+harvested_energy_perday
             counter+=1
-            #print("E_remaining:", E_remaining)
-            #print("counter",counter)
-            #print("Temp_lifetime",np.array(temp_lifetime_list))
-            #print("Len_Temp_lifetime",len(temp_lifetime_list))
             temp=temp_lifetime_list[-1]
             temp_lifetime_list.clear()
             temp_lifetime_list.append(temp)
@@ -374,13 +367,15 @@ def Lifetime_cal_with_solarpanel(ta, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSl
         #print("lifetime:",Lifetime/86400)
         #print("Energy",E)
         Lifetime = Lifetime + ta
+
         if (Lifetime > 86400*365*50):
+            print("Lifetime exceeds 50 year")
             return Lifetime
-            break
 
 
     return Lifetime
-
+                                     
+   
 #Pararmeter Initialization
 
 ta_list = [60, 900, 1800, 3600, 7200, 10800, 14400, 21600, 43200, 86400] # in seconds
