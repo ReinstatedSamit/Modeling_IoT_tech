@@ -473,8 +473,8 @@ for j in range (len(sa_list)):
         MaxDataPacketSize = 1500  # (BLE)#(NBIOIT)#245(BLE/LoRa)  # Maximum size of a data packet in bytes
         PTx = 2.318  # Power consumption
         PRx = 0.1178  # as iactive# Power consumption
-        PIdle = 0.01026  # asidle Power consumption
-        PSleep = 100e-6  # 3e-6(BLE)  # Power consumption
+        PIdle = 0.1178  # asidle Power consumption
+        PSleep = 0.01026  # 3e-6(BLE)  # Power consumption
         tsRx, tsTx, tsIdle = NBIOT_calculate_rx_tx_wait_time(sa_list[j])
         total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
                                   tsIdle, Ebattery)
