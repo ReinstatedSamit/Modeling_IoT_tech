@@ -221,6 +221,182 @@ def LC4_calculate_tx_delay(data_size):
 
     return delay
 
+
+def LT1_calculate_tx_time(data_size):
+    udp_header_size = 8
+    ip_max_size = 1500
+    ip_header_size = 40
+    ip_over = ip_header_size + udp_header_size
+    ip_pl_size = ip_max_size - ip_over
+
+    pdcp_pl_size = 1460
+    pdcp_ip_he_comp = 8
+    pdcp_he_size = 28
+
+    rlc_he_size = 44
+    mac_he_size = 8
+
+    phy_tti_time = 0.001
+    phy_tb_size = 5160
+
+    ip_pack_num = data_size // ip_pl_size
+    ip_last_size = data_size % ip_pl_size
+
+    ip_amount = ip_pack_num * (ip_max_size - ip_header_size) + udp_header_size + ip_last_size
+
+    data_at_pdcp = 0
+
+    if ip_last_size > 0:
+        data_at_pdcp = ((ip_amount + ((ip_pack_num + 1) * pdcp_ip_he_comp)) * 8) + (ip_pack_num + 1) * pdcp_he_size
+    else:
+        data_at_pdcp = ((ip_amount + (ip_pack_num * pdcp_ip_he_comp)) * 8) + (ip_pack_num) * pdcp_he_size
+
+    net_tb_size = phy_tb_size - mac_he_size - rlc_he_size
+
+    tti_num = math.ceil(data_at_pdcp / net_tb_size)
+
+    tx_time = tti_num * phy_tti_time
+
+    return 0,tx_time,0
+
+
+
+
+def wifiah_calculate_Trx(data_size):
+    # Upper layer constants
+    udp_header_size = 8
+    ip_max_size = 1334
+    ip_header_size = 40
+
+    ip_over = ip_header_size + udp_header_size
+    ip_pl_size = ip_max_size - ip_over
+
+    # Phy layer constants
+    phy_syml_time = 0.00004
+    phy_sym_time = phy_syml_time
+    phy_bit_per_sym = 78
+    n_es = 1
+    n_service = 8
+    n_tail = 6
+
+    t_stf = 0.00016
+    t_ltf1 = 0.00008
+    t_sig = 0.00024
+    t_ltfn = 0.00004
+    n_ltf = 1
+
+    phy_preamble_time = t_stf + t_ltf1 + t_sig + (n_ltf - 1) * t_ltfn
+
+    psdu_max_size = math.floor((511 * phy_bit_per_sym - n_service - (n_tail * n_es)) / 8)
+
+    # Mac layer constants
+    msdu_pl_size = 1634
+    msdu_over = 14
+    msdu_pad_full = 0
+
+    mpdu_max_size = psdu_max_size
+    a_mpdu_over = 28
+
+    mpdu_n_msdus = math.floor((mpdu_max_size - a_mpdu_over) / (msdu_over + msdu_pl_size))
+    mpdu_size = a_mpdu_over + (mpdu_n_msdus * (msdu_over + msdu_pl_size))
+
+    a_mpdu_n_mpdus = math.floor(psdu_max_size / mpdu_size)
+    a_mpdu_size = a_mpdu_n_mpdus * mpdu_size
+
+    mac_rts_sym_n = math.ceil(((8 * 20) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+    mac_full_sym_n = math.ceil(((8 * a_mpdu_size) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+
+    mac_rts_time = phy_preamble_time + (mac_rts_sym_n * phy_sym_time)
+    mac_cts_time = phy_preamble_time
+    mac_ack_time = phy_preamble_time
+    mac_full_time = phy_preamble_time + (mac_full_sym_n * phy_sym_time)
+
+    mac_slottime = 0.000052
+    mac_sifs_time = 0.00016
+    mac_difs_time = mac_sifs_time + 2 * mac_slottime
+
+    # Model data transmission
+    app_data_size = data_size
+
+    # Calculate number of UDP/IP packets
+    ip_trans_num = app_data_size // ip_pl_size
+    ip_last_size = app_data_size % ip_pl_size
+
+    # Calculate number of mpdus
+    a_msdu_num = 0
+    msdu_sf_last_num = 0
+
+    if ip_last_size > 0:
+        ip_num = ip_trans_num + 1
+        a_msdu_num = ip_num // mpdu_n_msdus
+        msdu_sf_last_num = ip_num % mpdu_n_msdus
+    else:
+        a_msdu_num = ip_trans_num // mpdu_n_msdus
+        msdu_sf_last_num = ip_trans_num % mpdu_n_msdus
+
+    last_a_msdu_size = 0
+
+    if ip_last_size > 0:
+        if msdu_sf_last_num > 0:
+            last_a_msdu_size = a_mpdu_over + ((msdu_sf_last_num - 1) * (msdu_over + msdu_pl_size)) + (
+                        msdu_over + ip_over + ip_last_size)
+        else:
+            a_msdu_num -= 1
+            last_a_msdu_size = a_mpdu_over + ((2) * (msdu_over + msdu_pl_size)) + (msdu_over + ip_over + ip_last_size)
+    else:
+        if msdu_sf_last_num > 0:
+            last_a_msdu_size = a_mpdu_over + ((msdu_sf_last_num) * (msdu_over + msdu_pl_size))
+
+    psdu_num = 0
+    psdu_msdu_last_num = 0
+
+    if last_a_msdu_size > 0:
+        psdu_num = a_msdu_num
+        psdu_msdu_last_num = 1
+    else:
+        psdu_num = a_msdu_num
+
+    last_psdu_size = 0
+
+    if psdu_msdu_last_num > 0:
+        if last_a_msdu_size > 0:
+            last_psdu_size = ((psdu_msdu_last_num - 1) * mpdu_size) + last_a_msdu_size
+        else:
+            last_psdu_size = (psdu_msdu_last_num * mpdu_size)
+    else:
+        if last_a_msdu_size > 0:
+            last_psdu_size = last_a_msdu_size
+
+    mac_last_sym_n = 0
+    mac_last_time = 0
+
+    if last_psdu_size > 0:
+        mac_last_sym_n = math.ceil(((8 * last_psdu_size) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+        mac_last_time = phy_preamble_time + (mac_last_sym_n * phy_sym_time)
+
+    rx_time = 0
+
+    if mac_last_time > 0:
+        rx_time = (psdu_num + 1) * (mac_difs_time + (3 * mac_sifs_time) + mac_cts_time + mac_ack_time)
+    else:
+        rx_time = psdu_num * (mac_difs_time + (3 * mac_sifs_time) + mac_cts_time + mac_ack_time)
+
+    tx_time = 0
+
+    if mac_last_time > 0:
+        if psdu_num >= 1:
+            tx_time = (psdu_num * mac_rts_time) + ((psdu_num) * mac_full_time) + mac_last_time
+        else:
+            tx_time = mac_rts_time + mac_last_time
+    else:
+        tx_time = psdu_num * (mac_rts_time + mac_full_time)
+
+    delay = rx_time + tx_time
+    #print ("Delay:",delay)
+
+    return rx_time, tx_time
+
+
 Example usage:
 data_size = 1000000
 use_6lo_hc = 1
