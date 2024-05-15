@@ -262,6 +262,140 @@ def LC4_calculate_tx_delay(data_size):
 
     return 0, tx_time, 0
 
+def wifiah_calculate_Trx(data_size):
+    # Upper layer constants
+    udp_header_size = 8
+    ip_max_size = 1334
+    ip_header_size = 40
+
+    ip_over = ip_header_size + udp_header_size
+    ip_pl_size = ip_max_size - ip_over
+
+    # Phy layer constants
+    phy_syml_time = 0.00004
+    phy_sym_time = phy_syml_time
+    phy_bit_per_sym = 78
+    n_es = 1
+    n_service = 8
+    n_tail = 6
+
+    t_stf = 0.00016
+    t_ltf1 = 0.00008
+    t_sig = 0.00024
+    t_ltfn = 0.00004
+    n_ltf = 1
+
+    phy_preamble_time = t_stf + t_ltf1 + t_sig + (n_ltf - 1) * t_ltfn
+
+    psdu_max_size = math.floor((511 * phy_bit_per_sym - n_service - (n_tail * n_es)) / 8)
+
+    # Mac layer constants
+    msdu_pl_size = 1634
+    msdu_over = 14
+    msdu_pad_full = 0
+
+    mpdu_max_size = psdu_max_size
+    a_mpdu_over = 28
+
+    mpdu_n_msdus = math.floor((mpdu_max_size - a_mpdu_over) / (msdu_over + msdu_pl_size))
+    mpdu_size = a_mpdu_over + (mpdu_n_msdus * (msdu_over + msdu_pl_size))
+
+    a_mpdu_n_mpdus = math.floor(psdu_max_size / mpdu_size)
+    a_mpdu_size = a_mpdu_n_mpdus * mpdu_size
+
+    mac_rts_sym_n = math.ceil(((8 * 20) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+    mac_full_sym_n = math.ceil(((8 * a_mpdu_size) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+
+    mac_rts_time = phy_preamble_time + (mac_rts_sym_n * phy_sym_time)
+    mac_cts_time = phy_preamble_time
+    mac_ack_time = phy_preamble_time
+    mac_full_time = phy_preamble_time + (mac_full_sym_n * phy_sym_time)
+
+    mac_slottime = 0.000052
+    mac_sifs_time = 0.00016
+    mac_difs_time = mac_sifs_time + 2 * mac_slottime
+
+    # Model data transmission
+    app_data_size = data_size
+
+    # Calculate number of UDP/IP packets
+    ip_trans_num = app_data_size // ip_pl_size
+    ip_last_size = app_data_size % ip_pl_size
+
+    # Calculate number of mpdus
+    a_msdu_num = 0
+    msdu_sf_last_num = 0
+
+    if ip_last_size > 0:
+        ip_num = ip_trans_num + 1
+        a_msdu_num = ip_num // mpdu_n_msdus
+        msdu_sf_last_num = ip_num % mpdu_n_msdus
+    else:
+        a_msdu_num = ip_trans_num // mpdu_n_msdus
+        msdu_sf_last_num = ip_trans_num % mpdu_n_msdus
+
+    last_a_msdu_size = 0
+
+    if ip_last_size > 0:
+        if msdu_sf_last_num > 0:
+            last_a_msdu_size = a_mpdu_over + ((msdu_sf_last_num - 1) * (msdu_over + msdu_pl_size)) + (
+                        msdu_over + ip_over + ip_last_size)
+        else:
+            a_msdu_num -= 1
+            last_a_msdu_size = a_mpdu_over + ((2) * (msdu_over + msdu_pl_size)) + (msdu_over + ip_over + ip_last_size)
+    else:
+        if msdu_sf_last_num > 0:
+            last_a_msdu_size = a_mpdu_over + ((msdu_sf_last_num) * (msdu_over + msdu_pl_size))
+
+    psdu_num = 0
+    psdu_msdu_last_num = 0
+
+    if last_a_msdu_size > 0:
+        psdu_num = a_msdu_num
+        psdu_msdu_last_num = 1
+    else:
+        psdu_num = a_msdu_num
+
+    last_psdu_size = 0
+
+    if psdu_msdu_last_num > 0:
+        if last_a_msdu_size > 0:
+            last_psdu_size = ((psdu_msdu_last_num - 1) * mpdu_size) + last_a_msdu_size
+        else:
+            last_psdu_size = (psdu_msdu_last_num * mpdu_size)
+    else:
+        if last_a_msdu_size > 0:
+            last_psdu_size = last_a_msdu_size
+
+    mac_last_sym_n = 0
+    mac_last_time = 0
+
+    if last_psdu_size > 0:
+        mac_last_sym_n = math.ceil(((8 * last_psdu_size) + n_service + (n_tail * n_es)) / phy_bit_per_sym)
+        mac_last_time = phy_preamble_time + (mac_last_sym_n * phy_sym_time)
+
+    rx_time = 0
+
+    if mac_last_time > 0:
+        rx_time = (psdu_num + 1) * (mac_difs_time + (3 * mac_sifs_time) + mac_cts_time + mac_ack_time)
+    else:
+        rx_time = psdu_num * (mac_difs_time + (3 * mac_sifs_time) + mac_cts_time + mac_ack_time)
+
+    tx_time = 0
+
+    if mac_last_time > 0:
+        if psdu_num >= 1:
+            tx_time = (psdu_num * mac_rts_time) + ((psdu_num) * mac_full_time) + mac_last_time
+        else:
+            tx_time = mac_rts_time + mac_last_time
+    else:
+        tx_time = psdu_num * (mac_rts_time + mac_full_time)
+
+    delay = rx_time + tx_time
+    #print ("Delay:",delay)
+
+    return rx_time, tx_time
+
 
 
 def ComputeEnergyToSendData_v2(sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx, tsIdle, ta):
@@ -489,6 +623,30 @@ for j in range (len(sa_list)):
 
 print("total_time_inday_list_LTECAT4", total_time_inyear_list_LTECAT4)
 
+
+#WiFi_ah
+for j in range (len(sa_list)):
+    for i in range(len(ta_list)):
+        # print('sa', sa_list[i])
+        MaxDataPacketSize = 1245  # (BLE)#(NBIOIT)#245(BLE/LoRa)  # Maximum size of a data packet in bytes
+        PTx = 0.0072    # Power consumption
+        PRx = 0.0044   # Power consumption
+        PIdle = 0  # Power consumption
+        PSleep = 1.5e-3  #   # Power consumption
+        tsRx, tsTx = wifiah_calculate_Trx(sa_list[j])
+        tsIdle = 0  # Idle time in seconds counted in Rx and Tx
+        total_time = Lifetime_cal(ta_list[i], sa_list[j], MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx,
+                                  tsIdle, Ebattery)
+        total_time_inyear_WiFiah = total_time / (3600 * 24*365)
+        total_time_inyear_list_WiFiah.append(total_time_inyear_WiFiah)
+    # total_time_with_Solar_panel = Lifetime_cal_with_solarpanel(ta, tsyn, sa_list[i], MaxDataPacketSize, PTx, PRx, PIdle,
+    # PSleep, PER, tsTx, tsRx, tsIdle,synchronization_on_data_frame_possible,
+    # Esyn, Ebattery, irradiance, panel_area, sunlight_hours, efficiency)
+    # total_time_inyear_list_BLE_with_solar_panel.append(total_time_with_Solar_panel / (3600 * 24))
+    #plt.plot(np.array(ta_list) / 3600, total_time_inyear_list_WiFiah, label=f"WiFiah_{j}", marker='x', linestyle='-')
+    plt.plot((24/(np.array(ta_list) / 3600))[::-1], total_time_inyear_list_WiFiah[::-1], label=f"WiFiah_{Label[j]}", marker='x', linestyle=f'{Linestyle[j]}',  color=color[6])
+    total_time_inyear_list_WiFiah.clear()
+#print("total_time_inday_list_BLE", total_time_inyear_list_BLE)
 
 plt.xlabel('Different application time in Hour')
 plt.ylabel('Lifetime in DAYS')
