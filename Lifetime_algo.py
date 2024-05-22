@@ -3,20 +3,6 @@ import matplotlib.pyplot as plt
 def ComputeEnergyToSendData(sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx, tsIdle, tsSleep):
     """
     Compute the energy consumed to send data.
-
-    Args:
-    sa (int): Size of application data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
-
     Returns:
     float: Energy consumed in sending data in joules.
     """
@@ -44,12 +30,6 @@ def ComputeEnergyToSendData(sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER,
 def ComputeEnergyInSleepMode(ta, ton, PSleepR):
     """
     Compute the energy consumed in sleep mode.
-
-    Args:
-    ta (float): Total time in seconds.
-    ton (float): On-time duration in seconds.
-    PSleepR (float): Power consumption during sleep mode for reception in watts.
-
     Returns:
     float: Energy consumed in sleep mode in joules.
     """
@@ -62,26 +42,6 @@ def ComputeEnergyInSleepMode(ta, ton, PSleepR):
 def ConsumedEnergy(ta, tsyn, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER, tsTx, tsRx, tsIdle, tsSleep, ton, PsleepR, synchronization_on_data_frame_possible, Esyn):
     """
     Compute the total energy consumed.
-
-    Args:
-    ta (float): Total time in seconds.
-    tsyn (float): Time for synchronization in seconds.
-    sa (int): Size of data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
-    ton (float): On-time duration in seconds.
-    PsleepR (float): Power consumption during sleep mode for reception in watts.
-    synchronization_on_data_frame_possible (bool): Whether synchronization on data frame is possible.
-    Esyn (float): Energy consumed for synchronization in joules.
-
     Returns:
     float: Total energy consumed in joules.
     """
@@ -107,27 +67,6 @@ def ConsumedEnergy(ta, tsyn, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER
 def Lifetime_cal(ta, tsyn, sa, MaxDataPacketSize, PTx, PRx, PIdle, PSleep, PER,  tsTx, tsRx, tsIdle, tsSleep, ton, PsleepR, synchronization_on_data_frame_possible, Esyn, Ebattery):
     """
     Compute the lifetime of the system.
-
-    Args:
-    ta (float): Total time in seconds.
-    tsyn (float): Time for synchronization in seconds.
-    sa (int): Size of data in bytes.
-    MaxDataPacketSize (int): Maximum size of a data packet in bytes.
-    PTx (float): Power consumption during transmission in watts.
-    PRx (float): Power consumption during reception in watts.
-    PIdle (float): Power consumption during idle state in watts.
-    PSleep (float): Power consumption during sleep mode in watts.
-    PER (float): Packet error rate.
-    tsTx (float): Transmission time in seconds.
-    tsRx (float): Reception time in seconds.
-    tsIdle (float): Idle time in seconds.
-    tsSleep (float): Sleep time in seconds.
-    ton (float): On-time duration in seconds.
-    PsleepR (float): Power consumption during sleep mode for reception in watts.
-    synchronization_on_data_frame_possible (bool): Whether synchronization on data frame is possible.
-    Esyn (float): Energy consumed for synchronization in joules.
-    Ebattery (float): Initial energy level of the battery in joules.
-
     Returns:
     float: Lifetime of the system in seconds.
     """
