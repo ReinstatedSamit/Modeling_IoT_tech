@@ -1,4 +1,4 @@
-# Power Consumption Values Used of Different IoT Technology
+# Power Consumption Values Used for Modeling Different IoT Technology
 
 
 | Technology          | Coverage | PTx(W)      | PRx(W)    | PIdle(W)  | PSleep(W)   | Reference                    |
